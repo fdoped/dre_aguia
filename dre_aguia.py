@@ -109,7 +109,7 @@ def load_data(xlsx_path: str, parquet_path: str) -> pd.DataFrame:
        os.path.getmtime(parquet_path) >= os.path.getmtime(xlsx_path):
         df = pd.read_parquet(parquet_path)
     else:
-        df = pd.read_excel(xlsx_path, sheet_name="Planilha1")
+        df = pd.read_excel(xlsx_path, sheet_name="DRE")
         for col in df.select_dtypes(include=["object"]).columns:
             df[col] = df[col].astype(str)
         df.to_parquet(parquet_path, index=False)
@@ -129,7 +129,7 @@ def load_data(xlsx_path: str, parquet_path: str) -> pd.DataFrame:
 # CAMINHOS
 # ─────────────────────────────────────────────────────────────────────────────
 diretorio    = os.path.dirname(os.path.abspath(__file__))
-xlsx_path    = os.path.join(diretorio, "Base_CSC_1604.xlsx")
+xlsx_path    = os.path.join(diretorio, "Base_1805 CSC Abril (Orc).xlsx")
 parquet_path = xlsx_path.replace(".xlsx", ".parquet")
 mapping_path = os.path.join(diretorio, "mapeamento_td.xlsx")
 
