@@ -819,6 +819,7 @@ table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 }
 /* Meses escondidos — classe removida pelo toggleMeses() */
 .meses-off .td-mes { display: none !important; }
+.meses-off th.td-mes { display: none !important; }
 
 /* seta */
 .arrow    { display: inline-block; width: 14px; color: #94A3B8; font-size: 10px;
@@ -1089,7 +1090,7 @@ function toggle(gid){
 """ + 
     "".join(
         f'          <th class="td-mes" data-mes="{m}" style="padding:10px 8px;text-align:right;font-size:10px;font-weight:700;'
-        f'color:#4A7FAA;letter-spacing:.08em;text-transform:uppercase;border:none;white-space:nowrap;display:none;">{MESES_CURTO[m]}</th>'
+        f'color:#4A7FAA;letter-spacing:.08em;text-transform:uppercase;border:none;white-space:nowrap;">{MESES_CURTO[m]}</th>'
         for m in meses_ativos
     ) + """
           <th class="td-val"  style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;color:#7FADD4;letter-spacing:.1em;text-transform:uppercase;border:none;white-space:nowrap;">Total (R$)</th>
