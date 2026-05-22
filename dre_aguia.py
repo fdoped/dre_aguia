@@ -390,8 +390,8 @@ def build_dre_html(df_f: pd.DataFrame, df_orc: pd.DataFrame, estrutura, subtotai
             f"<span id='arrow-{gid}' class='arrow'>&#9658;</span>"
             f"&nbsp;{label}</td>"
             f"{pct}"
-            f"<td class='td-val' style='color:{cor};font-weight:600;'>{_fmt(valor)}</td>"
             f"{td_meses}"
+            f"<td class='td-val' style='color:{cor};font-weight:600;'>{_fmt(valor)}</td>"
             f"{td_orc_html}</tr>"
         )
 
@@ -406,8 +406,8 @@ def build_dre_html(df_f: pd.DataFrame, df_orc: pd.DataFrame, estrutura, subtotai
             f"<span id='arrow-{gid}' class='arrow'>&#9658;</span>"
             f"&nbsp;{label}</td>"
             f"{pct}"
-            f"<td class='td-val td-val-sm' style='color:{cor};'>{_fmt(valor)}</td>"
             f"{td_meses}"
+            f"<td class='td-val td-val-sm' style='color:{cor};'>{_fmt(valor)}</td>"
             f"{td_orc_html}</tr>"
         )
 
@@ -422,8 +422,8 @@ def build_dre_html(df_f: pd.DataFrame, df_orc: pd.DataFrame, estrutura, subtotai
             f"<span id='arrow-{gid}' class='arrow arrow-sm'>&#9658;</span>"
             f"&nbsp;{label}</td>"
             f"{pct}"
-            f"<td class='td-val td-val-sm' style='color:{cor};'>{_fmt(valor)}</td>"
             f"{td_meses}"
+            f"<td class='td-val td-val-sm' style='color:{cor};'>{_fmt(valor)}</td>"
             f"{td_orc_html}</tr>"
         )
 
@@ -441,8 +441,8 @@ def build_dre_html(df_f: pd.DataFrame, df_orc: pd.DataFrame, estrutura, subtotai
             f"<span style='color:#94A3B8;font-size:10px;margin-right:4px;'>&#128269;</span>"
             f"{label}</td>"
             f"{pct}"
-            f"<td class='td-val td-val-xs' style='color:{cor};'>{_fmt(valor, 2)}</td>"
             f"{td_meses_arg}"
+            f"<td class='td-val td-val-xs' style='color:{cor};'>{_fmt(valor, 2)}</td>"
             f"{td_orc_html}</tr>"
         )
 
@@ -459,8 +459,8 @@ def build_dre_html(df_f: pd.DataFrame, df_orc: pd.DataFrame, estrutura, subtotai
                 f"<tr class='tr-total-final'>"
                 f"<td class='td-label td-total-label' style='color:#fff;'>(=) {label}</td>"
                 f"{pct_final}"
-                f"<td class='td-val td-total-val' style='color:{cor_v};'>{_fmt(valor)}</td>"
                 f"{td_meses}"
+                f"<td class='td-val td-total-val' style='color:{cor_v};'>{_fmt(valor)}</td>"
                 f"{td_orc_html}</tr>"
                 f"<tr><td colspan='{total_cols}' style='height:5px;background:#E8EDF2;'></td></tr>"
             )
@@ -469,8 +469,8 @@ def build_dre_html(df_f: pd.DataFrame, df_orc: pd.DataFrame, estrutura, subtotai
             f"<tr class='tr-subtotal'>"
             f"<td class='td-label td-subtotal-label'>(=) {label}</td>"
             f"{pct}"
-            f"<td class='td-val td-subtotal-val' style='color:{cor_v};'>{_fmt(valor)}</td>"
             f"{td_meses}"
+            f"<td class='td-val td-subtotal-val' style='color:{cor_v};'>{_fmt(valor)}</td>"
             f"{td_orc_html}</tr>"
             f"<tr><td colspan='{total_cols}' style='height:3px;background:#F1F5F9;'></td></tr>"
         )
