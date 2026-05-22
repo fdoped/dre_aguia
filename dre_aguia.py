@@ -110,9 +110,18 @@ def load_data(xlsx_path: str, parquet_path: str) -> pd.DataFrame:
         df = pd.read_parquet(parquet_path)
     else:
         df = pd.read_excel(xlsx_path, sheet_name="DRE")
+        # Força todas as colunas não-numéricas/não-datetime para str puro
+        # antes de salvar no parquet (evita erro "Invalid value for dtype str")
+        for col in df.columns:
+            if df[col].dtype.kind not in ("i", "u", "f", "M"):
+                try:
+                    df[col] = df[col].astype(str)
+                except Exception:
+                    df[col] = df[col].apply(lambda x: "" if x is None else str(x))
+        # Segunda passagem: colunas object residuais
         for col in df.select_dtypes(include=["object"]).columns:
             df[col] = df[col].astype(str)
-        df.to_parquet(parquet_path, index=False)
+        df.to_parquet(parquet_path, index=False, engine="pyarrow")
     for col in ["dre","Grupo","SubGrupo","Tipo_Documento","Empresa","cp_ms"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().replace("nan","Sem Classificação")
@@ -147,9 +156,20 @@ with st.spinner("Carregando…"):
         df     = aplicar_mapping(df_raw, mapping)
     except FileNotFoundError:
         st.error(f"Arquivo não encontrado: {xlsx_path}"); st.stop()
-    except Exception as e:
-        st.error(f"Erro: {e}"); st.stop()
-
+    except Exception as exc:
+        # Se o parquet estiver corrompido/incompatível, remove e tenta de novo
+        if os.path.exists(parquet_path):
+            os.remove(parquet_path)
+            st.cache_data.clear()
+            try:
+                df_raw = load_data(xlsx_path, parquet_path)
+                df     = aplicar_mapping(df_raw, mapping)
+            except Exception as exc2:
+                st.error(f"Erro ao carregar: {exc2}")
+                st.stop()
+        else:
+            st.error(f"Erro ao carregar: {exc}")
+            st.stop()
 # ─────────────────────────────────────────────────────────────────────────────
 # SIDEBAR — FILTROS
 # ─────────────────────────────────────────────────────────────────────────────
