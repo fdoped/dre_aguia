@@ -84,47 +84,76 @@ def aplicar_mapping(df: pd.DataFrame, mapping: dict) -> pd.DataFrame:
         else:
             k = td + SEP + cpm
             map_dre_exact[k] = cat; map_sig_exact[k] = sig
-    key_col   = df["Tipo_Documento"] + SEP + df["cp_ms"]
-    new_dre   = key_col.map(map_dre_exact)
-    new_sinal = key_col.map(map_sig_exact)
-    no_match  = new_dre.isna()
+
+    # Garante dtype object puro — parquet pandas2+ usa StringDtype/ArrowDtype
+    # que nao aceita NaN float nas operacoes de atribuicao por mascara booleana
+    td_col  = df["Tipo_Documento"].astype(object).astype(str)
+    cpm_col = df["cp_ms"].astype(object).astype(str)
+    dre_col = df["dre"].astype(object).astype(str)
+
+    key_col   = td_col + SEP + cpm_col
+    new_dre   = key_col.map(map_dre_exact).astype(object)
+    new_sinal = key_col.map(map_sig_exact).astype(object)
+
+    no_match = new_dre.isna()
     if no_match.any():
-        new_dre[no_match]   = df.loc[no_match, "Tipo_Documento"].map(map_dre_star)
-        new_sinal[no_match] = df.loc[no_match, "Tipo_Documento"].map(map_sig_star)
+        new_dre[no_match]   = td_col[no_match].map(map_dre_star)
+        new_sinal[no_match] = td_col[no_match].map(map_sig_star)
+
     null2 = new_dre.isna()
     if null2.any():
-        new_dre[null2] = df.loc[null2, "dre"]; new_sinal[null2] = -1
+        new_dre[null2]   = dre_col[null2]
+        new_sinal[null2] = -1
+
     df = df.copy()
     df["dre"]   = new_dre.values
-    df["sinal"] = new_sinal.fillna(-1).astype(int).values
+    df["sinal"] = pd.to_numeric(new_sinal, errors="coerce").fillna(-1).astype(int).values
     return df
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CARGA DE DADOS
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner=False)
 def load_data(xlsx_path: str, parquet_path: str) -> pd.DataFrame:
-    if os.path.exists(parquet_path) and \
-       os.path.getmtime(parquet_path) >= os.path.getmtime(xlsx_path):
-        df = pd.read_parquet(parquet_path)
-    else:
-        df = pd.read_excel(xlsx_path, sheet_name="DRE")
-        # Força todas as colunas não-numéricas/não-datetime para str puro
-        # antes de salvar no parquet (evita erro "Invalid value for dtype str")
+    # Detecta aba automaticamente (DRE, Planilha1, Sheet1 ou a primeira disponível)
+    def _get_sheet(path):
+        sheets = pd.ExcelFile(path).sheet_names
+        return next((s for s in sheets if s in ("DRE","Planilha1","Sheet1","Base")), sheets[0])
+
+    # Valida parquet existente: verifica colunas e presença do orçamento
+    _parquet_ok = False
+    if os.path.exists(parquet_path) and os.path.getmtime(parquet_path) >= os.path.getmtime(xlsx_path):
+        try:
+            df = pd.read_parquet(parquet_path)
+            colunas_ok = {"cp_ms","dre","valor_real_quitado","valor_real_aberto"}.issubset(df.columns)
+            tem_orc_parquet = df["cp_ms"].astype(str).str.strip().eq("Orcamento").any()
+            df_ck = pd.read_excel(xlsx_path, sheet_name=_get_sheet(xlsx_path),
+                                  usecols=["cp_ms"], nrows=1000)
+            tem_orc_excel = df_ck["cp_ms"].astype(str).str.strip().eq("Orcamento").any()
+            _parquet_ok = colunas_ok and (tem_orc_parquet or not tem_orc_excel)
+        except Exception:
+            _parquet_ok = False
+
+    if not _parquet_ok:
+        if os.path.exists(parquet_path):
+            os.remove(parquet_path)
+        df = pd.read_excel(xlsx_path, sheet_name=_get_sheet(xlsx_path))
+        # Converte colunas não-numéricas/não-datetime para str antes do parquet
         for col in df.columns:
             if df[col].dtype.kind not in ("i", "u", "f", "M"):
                 try:
                     df[col] = df[col].astype(str)
                 except Exception:
                     df[col] = df[col].apply(lambda x: "" if x is None else str(x))
-        # Segunda passagem: colunas object residuais
         for col in df.select_dtypes(include=["object"]).columns:
             df[col] = df[col].astype(str)
         df.to_parquet(parquet_path, index=False, engine="pyarrow")
+
     for col in ["dre","Grupo","SubGrupo","Tipo_Documento","Empresa","cp_ms"]:
         if col in df.columns:
-            df[col] = df[col].astype(str).str.strip().replace("nan","Sem Classificação")
+            # Converte StringDtype/ArrowDtype para object puro — pandas 2+ salva parquet
+            # com StringDtype que nao aceita NaN float nas operacoes de .map() do aplicar_mapping
+            df[col] = df[col].astype(object).astype(str).str.strip().replace("nan","Sem Classificacao")
     df["data"] = pd.to_datetime(df["data"], errors="coerce")
     df["Ano"]  = df["data"].dt.year.astype("Int64")
     df["Mes"]  = df["data"].dt.month.astype("Int64")
@@ -394,9 +423,10 @@ def build_dre_html(df_f: pd.DataFrame, df_orc: pd.DataFrame, estrutura, subtotai
         return "<td class='td-pct'></td>"
 
     def tr_secao(titulo: str) -> str:
+        _cols = 5 + len(meses_ativos)
         return (
             f"<tr class='tr-sec'>"
-            f"<td colspan='5' class='td-sec'>{titulo}</td></tr>"
+            f"<td colspan='{_cols}' class='td-sec'>{titulo}</td></tr>"
         )
 
     def tr_categoria(label: str, valor: float, gid: str, mc: float = None,
